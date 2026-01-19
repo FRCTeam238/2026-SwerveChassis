@@ -4,17 +4,55 @@
 
 package frc.robot;
 
+import java.util.List;
+
+import com.ctre.phoenix6.SignalLogger;
+import com.revrobotics.util.StatusLogger;
+
+import edu.wpi.first.epilogue.Epilogue;
+import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.epilogue.NotLogged;
+import edu.wpi.first.wpilibj.DataLogManager;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Filesystem;
+import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.subsystems.Drivetrain;
 
+@Logged
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
 
-  private final RobotContainer m_robotContainer;
+  public Drivetrain drivetrain;
+  public Controls controls;
+
+  private List<String> autoNames;
+  private SendableChooser<String> autoChooser;
+  private String lastSelectedAuto;
+
 
   public Robot() {
-    m_robotContainer = new RobotContainer();
+    SignalLogger.start();
+    DataLogManager.start();
+    DriverStation.startDataLog(DataLogManager.getLog());
+    StatusLogger.start();
+    Epilogue.bind(this);
+    
+    controls = Controls.getInstance();
+    drivetrain = Drivetrain.getInstance();
+  }
+  
+  public static boolean isPracticeBot() {
+    return false;
+  }
+
+  @Override
+  public void robotInit() {
   }
 
   @Override
@@ -22,29 +60,37 @@ public class Robot extends TimedRobot {
     CommandScheduler.getInstance().run();
   }
 
-  @Override
-  public void disabledInit() {}
+
+  public double getTime() {
+    return DriverStation.getMatchTime();
+  }
 
   @Override
-  public void disabledPeriodic() {}
+  public void disabledInit() {
+  }
 
   @Override
-  public void disabledExit() {}
+  public void disabledPeriodic() {
+  }
+
+  @Override
+  public void disabledExit() {
+  }
 
   @Override
   public void autonomousInit() {
-    m_autonomousCommand = m_robotContainer.getAutonomousCommand();
-
     if (m_autonomousCommand != null) {
-      CommandScheduler.getInstance().schedule(m_autonomousCommand);
+      m_autonomousCommand.schedule();
     }
   }
 
   @Override
-  public void autonomousPeriodic() {}
+  public void autonomousPeriodic() {
+  }
 
   @Override
-  public void autonomousExit() {}
+  public void autonomousExit() {
+  }
 
   @Override
   public void teleopInit() {
@@ -54,10 +100,12 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void teleopPeriodic() {}
+  public void teleopPeriodic() {
+  }
 
   @Override
-  public void teleopExit() {}
+  public void teleopExit() {
+  }
 
   @Override
   public void testInit() {
@@ -65,8 +113,10 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void testPeriodic() {}
+  public void testPeriodic() {
+  }
 
   @Override
-  public void testExit() {}
+  public void testExit() {
+  }
 }
