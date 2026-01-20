@@ -3,7 +3,6 @@ package frc.robot.subsystems;
 import static frc.robot.Constants.DriveConstants.*;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 
@@ -347,13 +346,12 @@ public class Drivetrain extends SubsystemBase {
     rightCam = new PhotonCamera("RightCam");
 
     rightEstimator = new PhotonPoseEstimator(
-        AprilTagFieldLayout.loadField(AprilTagFields.k2025ReefscapeAndyMark),
+        AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltAndymark),
         PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
         rightCameraLocation // TODO: Make real numbers
     );
     leftEstimator = new PhotonPoseEstimator(
-        AprilTagFieldLayout.loadField(AprilTagFields.k2025ReefscapeAndyMark),
-        PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+        AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltAndymark),
         leftCameraLocation // TODO: Make real numbers
     );
   }
@@ -369,33 +367,10 @@ public class Drivetrain extends SubsystemBase {
     return rightCam.getLatestResult().getBestTarget().bestCameraToTarget;
   }
 
-  @NotLogged
-  public int getBestTagId(boolean rightSide) {
-    if (rightSide) {
-      return leftCam.getLatestResult().getBestTarget().fiducialId;
-    } else {
-      return rightCam.getLatestResult().getBestTarget().fiducialId;
-    }
-  }
-
-  /**
-   * 
-   * 
-   */
-  @NotLogged
-  public PhotonPipelineResult getLatestResult(boolean rightSideOfReef) {
-    if (rightSideOfReef) {
-      return leftCam.getLatestResult();
-    } else {
-      return rightCam.getLatestResult();
-    }
-  }
-
   /**
    * wrapper for running all periodic vision code
    */
   private void runVision() {
-    // rightEstimator.addHeadingData(Timer.getFPGATimestamp(), odometry.getEstimatedPosition().getRotation());
     for (var result : rightCam.getAllUnreadResults()) {
       if (!result.hasTargets()) continue;
       // if best visible target is too far away for our liking, discard it, else use
@@ -409,8 +384,12 @@ public class Drivetrain extends SubsystemBase {
       if (rightAmbiguity > maxAmbiguity)
         continue;
 
-      var em = rightEstimator.update(result);
-      rightPoseEstimate = em.get().estimatedPose;
+      var em = rightEstimator.estimateCoprocMultiTagPose(result);
+            if (em.isEmpty()) {
+                em = rightEstimator.estimateLowestAmbiguityPose(result);
+            }
+      if(em.isEmpty())
+        continue;
       // Check if estimate has us flying in the air and reject
       if (rightPoseEstimate.getZ() > zTolerance)
         continue;
@@ -429,7 +408,6 @@ public class Drivetrain extends SubsystemBase {
       odometry.addVisionMeasurement(rightPoseEstimate.toPose2d(), em.get().timestampSeconds);
     }
 
-    // leftEstimator.addHeadingData(Timer.getFPGATimestamp(), odometry.getEstimatedPosition().getRotation());
     for (var result : leftCam.getAllUnreadResults()) {
       if (!result.hasTargets()) continue;
       // if best visible target is too far away for our liking, discard it, else use
@@ -443,8 +421,12 @@ public class Drivetrain extends SubsystemBase {
       if (leftAmbiguity > maxAmbiguity)
         continue;
 
-      var em = leftEstimator.update(result);
-      leftPoseEstimate = em.get().estimatedPose;
+      var em = leftEstimator.estimateCoprocMultiTagPose(result);
+      if (em.isEmpty()) {
+          em = leftEstimator.estimateLowestAmbiguityPose(result);
+      }
+      if(em.isEmpty())
+        continue;
       // Check if estimate has us flying in the air and reject
       if (leftPoseEstimate.getZ() > zTolerance)
         continue;
